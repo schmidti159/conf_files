@@ -1,0 +1,76 @@
+MAXSPAMSCORE="3" 
+logfile "$HOME/mailfilter.log"
+ 
+# set default Maildir
+MAILDIR="$HOME/Maildir"
+ 
+ 
+# check folder structure
+`test -d "$MAILDIR/.0 Spam"`
+if( $RETURNCODE == 1 )
+{
+  `maildirmake "$MAILDIR/.0 Spam"`
+}
+#`test -d "$MAILDIR/.0 Spam.als Spam lernen"`
+#if( $RETURNCODE == 1 )
+#${
+#  `maildirmake "$MAILDIR/.0 Spam.als Spam lernen"`
+#}
+#`test -d "$MAILDIR/.0 Spam.als Ham lernen"`
+#if( $RETURNCODE == 1 )
+#{
+#  `maildirmake "$MAILDIR/.0 Spam.als Ham lernen"`
+#}
+ 
+# show the mail to SpamAssassin
+xfilter "/usr/bin/spamc"
+ 
+# now show the mail to DSPAM
+#xfilter "/package/host/localhost/dspam/bin/dspam --mode=teft --deliver=innocent,spam --stdout"
+ 
+# if whitelisted by DSPAM just deliver
+#if ( /^X-DSPAM-Result: Whitelisted/)
+#{
+#  to "$MAILDIR"
+#}
+ 
+# process SPAM
+if ( /^X-Spam-Level: \*{$MAXSPAMSCORE,}$/ || /^X-DSPAM-Result: Spam/)
+{
+#  MAILDIR="$MAILDIR/.0 Spam"
+#  cc "$MAILDIR";
+  # mark as read
+  #`find "$MAILDIR/new/" -mindepth 1 -maxdepth 1 -type f -printf '%f\0' | xargs -0 -I {} mv "$MAILDIR/new/{}" "$MAILDIR/cur/{}:2,S"`
+#  exit
+}
+ 
+# check if we're called from a .qmail-EXT instead of .qmail
+#
+import EXT
+if ( $EXT )
+{
+  # does a vmailmgr user with the start of $EXT exist?
+  # if yes, deliver mail to his Maildir instead
+  USER=`IFS='-' ARRAY=($EXT); echo ${ARRAY[0]}`
+  CHECKMAILDIR = `dumpvuser $USER | grep '^Directory' | awk '{ print $2 }'`
+  if ( $CHECKMAILDIR )
+  {
+    MAILDIR="$HOME/$CHECKMAILDIR"
+
+    # put into subdirectories if existing
+    import DEFAULT
+    if ($DEFAULT)
+    {
+      SUBDIR=`echo "$DEFAULT" | sed -r 's/-/./g'`
+      `test -d "$MAILDIR/.$SUBDIR"`
+      if( $RETURNCODE == 0 )
+      {
+        MAILDIR="$MAILDIR/.$SUBDIR"
+      }
+    }
+    echo `echo $MAILDIR`
+  }
+}
+
+# and finally, deliver everything that survived our filtering
+to "$MAILDIR"
