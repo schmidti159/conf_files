@@ -68,7 +68,6 @@ if ( $EXT )
         MAILDIR="$MAILDIR/.$SUBDIR"
       }
     }
-    echo `echo $MAILDIR`
   }
 }
 
