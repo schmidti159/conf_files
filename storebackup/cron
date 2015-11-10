@@ -1,0 +1,4 @@
+#!/bin/sh
+sudo mount /media/backup
+sudo storeBackup -f /home/shared/backups.conf >> /var/log/backup_log
+sudo umount /media/backup
